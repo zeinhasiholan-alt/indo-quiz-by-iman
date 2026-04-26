@@ -1,173 +1,190 @@
 /**
- * Proyek: Indo Quiz AI
+ * Indo Quiz AI - Core Logic
  * Developer: Iman Firman
- * Fitur: 10 Soal, Database Lokal (Indonesia), No API Key Needed
+ * API: Groq Cloud Llama 3
  */
 
-// Database Soal Internal (Bisa kamu tambahkan terus ke bawah)
-const DB_SOAL = [
-    {cat:'umum', q:'Apa ibu kota Indonesia sebelum pindah ke IKN?', opts:['Bandung','Jakarta','Surabaya','Medan'], ans:1, hint:'Kota ini terletak di pulau Jawa.'},
-    {cat:'sains', q:'Planet manakah yang dijuluki sebagai Planet Merah?', opts:['Venus','Mars','Jupiter','Saturnus'], ans:1, hint:'Planet ini memiliki banyak oksida besi.'},
-    {cat:'sejarah', q:'Siapakah proklamator kemerdekaan Indonesia?', opts:['Soeharto','Hatta & Soekarno','Ki Hajar Dewantara','Gajah Mada'], ans:1, hint:'Dua tokoh ini ada di uang pecahan 100rb.'},
-    {cat:'geografi', q:'Gunung tertinggi di dunia adalah...', opts:['Semeru','Fuji','Everest','Kilimanjaro'], ans:2, hint:'Terletak di pegunungan Himalaya.'},
-    {cat:'teknologi', q:'Siapa penemu sistem operasi Windows?', opts:['Steve Jobs','Mark Zuckerberg','Bill Gates','Elon Musk'], ans:2, hint:'Perusahaannya bernama Microsoft.'},
-    {cat:'budaya', q:'Alat musik angklung berasal dari daerah...', opts:['Jawa Tengah','Jawa Barat','Sumatera','Bali'], ans:1, hint:'Terbuat dari bambu.'},
-    {cat:'sains', q:'Zat hijau daun pada tumbuhan disebut...', opts:['Oksigen','Klorofil','Stomata','Karbon'], ans:1, hint:'Berfungsi untuk fotosintesis.'},
-    {cat:'umum', q:'Mata uang negara Jepang adalah...', opts:['Won','Dollar','Yen','Baht'], ans:2, hint:'Huruf depannya Y.'},
-    {cat:'sejarah', q:'Tahun berapakah Indonesia merdeka?', opts:['1942','1945','1950','1998'], ans:1, hint:'Dua angka terakhirnya adalah 45.'},
-    {cat:'teknologi', q:'Apa kepanjangan dari WWW?', opts:['World Wide Web','Web Web Web','Word Wide Web','World Web Wide'], ans:0, hint:'Digunakan di awal alamat website.'},
-    {cat:'umum', q:'Siapa pencipta lagu Indonesia Raya?', opts:['Ismail Marzuki','WR Supratman','Ibu Sud','Kusbini'], ans:1, hint:'Namanya sering disingkat WR.'},
-    {cat:'geografi', q:'Danau terbesar di Indonesia adalah...', opts:['Danau Toba','Danau Singkarak','Danau Poso','Danau Sentani'], ans:0, hint:'Terletak di Sumatera Utara.'},
-    {cat:'sains', q:'Mamalia air yang dikenal sangat cerdas adalah...', opts:['Hiu','Paus','Lumba-lumba','Anjing Laut'], ans:2, hint:'Sering menolong manusia.'},
-    {cat:'olahraga', q:'Berapa jumlah pemain dalam satu tim sepak bola?', opts:['5','12','11','10'], ans:2, hint:'Kesebelasan.'},
-    {cat:'bahasa', q:'Lawan kata (antonim) dari "Rajin" adalah...', opts:['Pintar','Malas','Cerdas','Giat'], ans:1, hint:'Orang yang tidak mau bekerja.'}
-];
+const GROQ_KEY = "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";
 
-const L = ['A', 'B', 'C', 'D'];
-let qs = [], idx = 0, score = 0, cor = 0, wrg = 0, answered = false, tmr, tLeft = 20, selCat = 'semua';
+let questions = [];
+let currentIndex = 0;
+let score = 0;
+let corrects = 0;
+let timeLeft = 20;
+let timer;
 
-// Fungsi Memilih & Mengacak Soal
-function fetchAIQuestions() {
+// -- 1. Ambil Soal dari AI Groq --
+async function fetchQuestions() {
     const qText = document.getElementById('q-text');
-    qText.textContent = "🔍 Menyiapkan 10 soal untukmu...";
+    const optsGrid = document.getElementById('opts-grid');
     
-    // Memfilter soal berdasarkan kategori (jika bukan 'semua')
-    let filtered = DB_SOAL;
-    if(selCat !== 'semua') {
-        filtered = DB_SOAL.filter(s => s.cat === selCat);
-    }
+    qText.innerHTML = `<span style="color:var(--accent)">🤖 Groq AI sedang merancang soal untukmu...</span>`;
+    optsGrid.innerHTML = '';
+    document.getElementById('cat-badge').textContent = "AI GENERATING";
 
-    // Mengacak soal (Shuffle)
-    const shuffled = filtered.sort(() => Math.random() - 0.5);
-    
-    // Mengambil maksimal 10 soal
-    qs = shuffled.slice(0, 10);
-    
-    // Jika soal kurang dari 10 (karena kategori sepi), ambil dari kategori lain
-    if(qs.length < 10) {
-        qs = shuffled.slice(0, 10); 
-    }
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "llama3-8b-8192",
+                messages: [{
+                    role: "system",
+                    content: `Buat 10 soal kuis pilihan ganda Indonesia bertema Umum/Teknologi. 
+                    HANYA berikan JSON array: [{"q":"soal","a":["p1","p2","p3","p4"],"c":index_benar,"h":"petunjuk"}]`
+                }],
+                temperature: 0.7
+            })
+        });
 
-    idx = 0;
-    setTimeout(load, 800); // Memberi efek loading singkat
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        
+        // Membersihkan string jika AI memberikan teks tambahan di luar JSON
+        const cleanJson = content.substring(content.indexOf("["), content.lastIndexOf("]") + 1);
+        questions = JSON.parse(cleanJson);
+
+        currentIndex = 0;
+        loadQuestion();
+
+    } catch (err) {
+        console.error(err);
+        qText.innerHTML = "❌ Gagal memuat AI. Klik 'Main Lagi' untuk mencoba ulang.";
+    }
 }
 
-function start() {
-    score = 0; cor = 0; wrg = 0; upd();
-    document.getElementById('result').classList.remove('show');
-    document.getElementById('gcard').classList.remove('gone');
-    fetchAIQuestions(); 
-}
+// -- 2. Tampilkan Soal --
+function loadQuestion() {
+    if (currentIndex >= questions.length) {
+        showResults();
+        return;
+    }
 
-function load() {
-    if (!qs || qs.length === 0 || idx >= qs.length) { showResult(); return; }
-    answered = false;
-    const q = qs[idx];
-    
-    document.getElementById('q-num').textContent = `SOAL ${String(idx + 1).padStart(2, '0')}`;
+    const q = questions[currentIndex];
+    const optsGrid = document.getElementById('opts-grid');
+    const btnNext = document.getElementById('btn-next');
+    const fb = document.getElementById('fb-toast');
+
+    // UI Reset
+    fb.textContent = "";
+    btnNext.disabled = true;
+    document.getElementById('hint-msg').style.display = 'none';
     document.getElementById('q-text').textContent = q.q;
-    document.getElementById('hint-box').textContent = '💡 ' + q.hint;
-    document.getElementById('hint-box').classList.remove('show');
-    document.getElementById('cat-badge').textContent = (q.cat || selCat).toUpperCase();
-    document.getElementById('prog-txt').textContent = `${idx + 1}/${qs.length}`;
-    document.getElementById('prog').style.width = `${((idx + 1) / qs.length) * 100}%`;
-    document.getElementById('btn-next').disabled = true;
-    document.getElementById('fb').className = 'fb';
+    document.getElementById('cat-badge').textContent = "GROQ AI LIVE";
+    document.getElementById('prog-text').textContent = `${currentIndex + 1}/${questions.length}`;
+    document.getElementById('prog-fill').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
 
-    const og = document.getElementById('opts');
-    og.innerHTML = '';
-    q.opts.forEach((o, i) => {
-        const b = document.createElement('button');
-        b.className = 'opt';
-        b.innerHTML = `<span class="opt-ltr">${L[i]}</span>${o}`;
-        b.onclick = () => pick(i);
-        og.appendChild(b);
+    optsGrid.innerHTML = '';
+    q.a.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(index, btn);
+        optsGrid.appendChild(btn);
     });
+
     startTimer();
 }
 
+// -- 3. Logika Timer --
 function startTimer() {
-    clearInterval(tmr); tLeft = 20;
-    const bar = document.getElementById('tbar'); bar.style.width = '100%';
-    tmr = setInterval(() => {
-        tLeft--; bar.style.width = `${(tLeft / 20) * 100}%`;
-        if (tLeft <= 0) { clearInterval(tmr); if (!answered) timeUp(); }
+    clearInterval(timer);
+    timeLeft = 20;
+    const line = document.getElementById('t-line');
+    line.style.width = '100%';
+    line.style.transition = 'none';
+
+    setTimeout(() => {
+        line.style.transition = 'width 20s linear';
+        line.style.width = '0%';
+    }, 50);
+
+    timer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            handleTimeout();
+        }
     }, 1000);
 }
 
-function timeUp() {
-    answered = true;
-    document.querySelectorAll('.opt').forEach((b, i) => { 
-        b.disabled = true; 
-        if (i === qs[idx].ans) b.classList.add('correct'); 
-    });
-    setFb(false, '⏰ Waktu habis!');
-    wrg++; upd(); document.getElementById('btn-next').disabled = false;
-}
+// -- 4. Cek Jawaban --
+function checkAnswer(idx, btn) {
+    clearInterval(timer);
+    const q = questions[currentIndex];
+    const btns = document.querySelectorAll('.opt-btn');
+    const fb = document.getElementById('fb-toast');
 
-function pick(i) {
-    if (answered) return;
-    answered = true; clearInterval(tmr);
-    const q = qs[idx];
-    const btns = document.querySelectorAll('.opt');
     btns.forEach(b => b.disabled = true);
-    if (i === q.ans) {
-        btns[i].classList.add('correct');
-        const bonus = Math.max(10, tLeft * 5); score += bonus; cor++;
-        setFb(true, `✅ Benar! +${bonus} Poin`);
+
+    if (idx === q.c) {
+        btn.classList.add('correct');
+        const bonus = 10 + timeLeft;
+        score += bonus;
+        corrects++;
+        fb.innerHTML = `<span style="color:var(--success)">✨ BENAR! +${bonus}</span>`;
     } else {
-        btns[i].classList.add('wrong'); btns[q.ans].classList.add('correct'); wrg++;
-        setFb(false, `❌ Salah!`);
+        btn.classList.add('wrong');
+        btns[q.c].classList.add('correct');
+        fb.innerHTML = `<span style="color:var(--error)">❌ SALAH</span>`;
     }
-    upd(); document.getElementById('btn-next').disabled = false;
+
+    updateStats();
+    document.getElementById('btn-next').disabled = false;
 }
 
-function setCat(c, el) {
-    selCat = c;
-    document.querySelectorAll('.chip').forEach(b => b.classList.remove('on'));
-    el.classList.add('on');
-    restart();
+function handleTimeout() {
+    const q = questions[currentIndex];
+    const btns = document.querySelectorAll('.opt-btn');
+    btns.forEach(b => b.disabled = true);
+    btns[q.c].classList.add('correct');
+    document.getElementById('fb-toast').innerHTML = `<span style="color:var(--error)">⏰ WAKTU HABIS</span>`;
+    document.getElementById('btn-next').disabled = false;
 }
 
-function setFb(ok, msg) { 
-    const fb = document.getElementById('fb'); 
-    fb.className = 'fb ' + (ok ? 'ok' : 'bad'); 
-    document.getElementById('fb-txt').textContent = msg; 
+// -- 5. Helpers --
+function updateStats() {
+    document.getElementById('sv-score').textContent = score;
+    const acc = Math.round((corrects / (currentIndex + 1)) * 100);
+    document.getElementById('sv-acc').textContent = acc + '%';
 }
 
-function showHint() { document.getElementById('hint-box').classList.toggle('show'); }
-function next() { idx++; load(); }
-function upd() { 
-    document.getElementById('sv-score').textContent = score; 
-    document.getElementById('sv-cor').textContent = cor; 
-    document.getElementById('sv-wrg').textContent = wrg; 
+function nextQuestion() {
+    currentIndex++;
+    loadQuestion();
 }
 
-function showResult() {
-    clearInterval(tmr);
-    document.getElementById('gcard').classList.add('gone');
-    document.getElementById('result').classList.add('show');
-    const acc = qs.length ? Math.round((cor / qs.length) * 100) : 0;
-    
-    // Penilaian berdasarkan akurasi
-    let rTitle = "BOLEH JUGA!";
-    if(acc >= 90) rTitle = "LUAR BIASA! 👑";
-    else if(acc >= 70) rTitle = "HEBAT! 🔥";
-    else if(acc < 50) rTitle = "COBA LAGI, MAN! 📚";
-
-    document.getElementById('r-title').textContent = rTitle;
-    document.getElementById('r-score').textContent = score;
-    document.getElementById('rv-c').textContent = cor;
-    document.getElementById('rv-w').textContent = wrg;
-    document.getElementById('rv-a').textContent = acc + '%';
+function toggleHint() {
+    const hint = document.getElementById('hint-msg');
+    hint.textContent = questions[currentIndex].h;
+    hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
 }
 
-function restart() { start(); }
+function showResults() {
+    document.getElementById('quiz-box').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+    document.getElementById('rv-cor').textContent = corrects;
+    document.getElementById('rv-wrg').textContent = 10 - corrects;
+    document.getElementById('rv-score').textContent = score;
+}
+
+function restartGame() {
+    score = 0; corrects = 0; currentIndex = 0;
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('quiz-box').style.display = 'block';
+    updateStats();
+    fetchQuestions();
+}
+
+function openDevModal() { document.getElementById('dev-modal').style.display = 'grid'; }
+function closeDevModal() { document.getElementById('dev-modal').style.display = 'none'; }
 function toggleTheme() {
-    const h = document.documentElement, dark = h.getAttribute('data-theme') === 'dark';
-    h.setAttribute('data-theme', dark ? 'light' : 'dark');
-    document.getElementById('tlabel').textContent = dark ? '🌙 Gelap' : '☀️ Terang';
+    const html = document.documentElement;
+    html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
 
-// Inisialisasi
-document.addEventListener('DOMContentLoaded', start);
+// Jalankan saat startup
+document.addEventListener('DOMContentLoaded', fetchQuestions);
