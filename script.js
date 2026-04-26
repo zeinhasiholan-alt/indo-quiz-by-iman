@@ -4,7 +4,7 @@
  * API: Groq Cloud Llama 3
  */
 
-const GROQ_KEY = "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";
+const GROQ_KEY = "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";
 
 let questions = [];
 let currentIndex = 0;
