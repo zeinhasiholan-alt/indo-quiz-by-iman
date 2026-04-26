@@ -3,96 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tebak-Tebakan | Dibuat oleh Iman</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Indo Quiz AI | Powered by Groq</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="blobs">
-        <div class="blob blob1"></div>
-        <div class="blob blob2"></div>
-        <div class="blob blob3"></div>
+    <div class="premium-bg">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
     </div>
-    <div class="grid-bg"></div>
 
-    <div class="wrap">
-        <nav>
-            <div class="logo">
-                <div class="logo-icon">🇲🇨</div>
-                <div>
-                    <div class="logo-name">Indo Quiz AI</div>
-                    <div class="logo-by">Iman Firman</div>
+    <div class="container">
+        <nav class="glass-nav">
+            <div class="brand">
+                <div class="brand-logo">IQ</div>
+                <div class="brand-text">
+                    <h1>Indo Quiz AI</h1>
+                    <p>Experience by Iman Firman</p>
                 </div>
             </div>
-            <button class="toggle" onclick="toggleTheme()">
-                <span id="tlabel">☀️ Terang</span>
-                <div class="t-track"><div class="t-thumb"></div></div>
-            </button>
+            <div class="nav-actions">
+                <button class="dev-btn" onclick="openDevModal()">👤 Dev</button>
+                <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+            </div>
         </nav>
 
-        <div class="stats">
-            <div class="stat" id="sc-card">
-                <div class="stat-val" id="sv-score">0</div>
-                <div class="stat-lbl">Skor</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">TOTAL SKOR</span>
+                <span class="stat-value" id="sv-score">0</span>
             </div>
-            <div class="stat">
-                <div class="stat-val" id="sv-cor">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-val" id="sv-wrg">0</div>
-                <div class="stat-lbl">Salah</div>
+            <div class="stat-card">
+                <span class="stat-label">AKURASI</span>
+                <span class="stat-value" id="sv-acc">0%</span>
             </div>
         </div>
 
-        <div class="cats">
-            <div class="cats-lbl">· Kategori ·</div>
-            <div class="chips">
-                <button class="chip on" onclick="setCat('semua',this)">Semua</button>
-                <button class="chip" onclick="setCat('umum',this)">Umum</button>
-                <button class="chip" onclick="setCat('sains',this)">Sains</button>
-                <button class="chip" onclick="setCat('sejarah',this)">Sejarah</button>
-                <button class="chip" onclick="setCat('bahasa',this)">Bahasa</button>
-                <button class="chip" onclick="setCat('budaya',this)">Budaya</button>
-            </div>
-        </div>
-
-        <div class="gcard" id="gcard">
-            <div class="gc-top">
-                <span class="gc-badge" id="cat-badge">MEMUAT AI...</span>
-                <div class="gc-prog">
-                    <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
-                    <span id="prog-txt">0/0</span>
+        <main class="quiz-box glass-card" id="quiz-box">
+            <div class="quiz-header">
+                <div class="category-tag" id="cat-badge">GENERATING AI...</div>
+                <div class="progress-info">
+                    <span id="prog-text">0/10</span>
                 </div>
             </div>
-            <div class="timer-row">
-                <div class="timer-track"><div class="timer-bar" id="tbar" style="width:100%"></div></div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-fill" id="prog-fill"></div>
             </div>
-            <div class="q-body">
-                <div class="q-num" id="q-num">SOAL --</div>
-                <div class="q-text" id="q-text">Sedang menyiapkan pertanyaan dari AI...</div>
-                <div class="hint-box" id="hint-box"></div>
-            </div>
-            <div class="opts" id="opts"></div>
-            <div class="fb" id="fb"><span id="fb-txt"></span></div>
-            <div class="actions">
-                <button class="btn btn-hint" onclick="showHint()">💡 Petunjuk</button>
-                <button class="btn btn-next" id="btn-next" onclick="next()" disabled>Lanjut →</button>
-            </div>
-        </div>
 
-        <div class="result" id="result">
-            <span class="r-emoji" id="r-emoji">🎯</span>
-            <div class="r-title" id="r-title">SELESAI!</div>
-            <div class="r-sub" id="r-sub">Semua soal telah dijawab</div>
-            <div class="r-score" id="r-score">0</div>
-            <div class="r-stats">
-                <div class="r-stat"><div class="r-sv" id="rv-c">0</div><div class="r-sl">Benar</div></div>
-                <div class="r-stat"><div class="r-sv" id="rv-w">0</div><div class="r-sl">Salah</div></div>
-                <div class="r-stat"><div class="r-sv" id="rv-a">0%</div><div class="r-sl">Akurasi</div></div>
+            <div class="timer-container">
+                <div class="timer-line" id="t-line"></div>
             </div>
-            <button class="btn-restart" onclick="restart()">▶ Main Lagi</button>
+
+            <div class="question-area">
+                <h2 id="q-text">Menghubungkan ke otak AI Groq...</h2>
+                <div class="hint-msg" id="hint-msg"></div>
+            </div>
+
+            <div class="options-grid" id="opts-grid"></div>
+
+            <div class="feedback-area" id="fb-toast"></div>
+
+            <div class="footer-actions">
+                <button class="btn-hint" onclick="toggleHint()">💡 Hint</button>
+                <button class="btn-next" id="btn-next" onclick="nextQuestion()" disabled>Lanjut →</button>
+            </div>
+        </main>
+
+        <div class="result-screen glass-card" id="result-screen" style="display: none;">
+            <div class="result-header">
+                <span class="result-emoji" id="r-emoji">🏁</span>
+                <h2 id="r-title">FINISH!</h2>
+            </div>
+            <div class="result-stats">
+                <div class="res-item"><span>Benar</span><b id="rv-cor">0</b></div>
+                <div class="res-item"><span>Salah</span><b id="rv-wrg">0</b></div>
+                <div class="res-item"><span>Skor Akhir</span><b id="rv-score">0</b></div>
+            </div>
+            <button class="btn-restart" onclick="restartGame()">🔄 Main Lagi</button>
         </div>
     </div>
+
+    <div class="modal-overlay" id="dev-modal">
+        <div class="modal-card glass-card">
+            <button class="close-modal" onclick="closeDevModal()">&times;</button>
+            <div class="dev-profile">
+                <div class="dev-avatar">IF</div>
+                <h2>Iman Firman</h2>
+                <p>Lead AI Developer</p>
+                <div class="dev-tags">
+                    <span>Vercel Expert</span>
+                    <span>AI Specialist</span>
+                    <span>UI/UX Designer</span>
+                </div>
+                <div class="dev-bio">"Building the future with Groq AI & Premium Design."</div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
