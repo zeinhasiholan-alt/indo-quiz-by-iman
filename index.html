@@ -20,7 +20,7 @@
             <div class="logo">
                 <div class="logo-icon">🇲🇨</div>
                 <div>
-                    <div class="logo-name">Indo Quiz</div>
+                    <div class="logo-name">Indo Quiz AI</div>
                     <div class="logo-by">Iman Firman</div>
                 </div>
             </div>
@@ -37,7 +37,6 @@
             </div>
             <div class="stat">
                 <div class="stat-val" id="sv-cor">0</div>
-                <div class="stat-lbl">Benar</div>
             </div>
             <div class="stat">
                 <div class="stat-val" id="sv-wrg">0</div>
@@ -59,18 +58,18 @@
 
         <div class="gcard" id="gcard">
             <div class="gc-top">
-                <span class="gc-badge" id="cat-badge">UMUM</span>
+                <span class="gc-badge" id="cat-badge">MEMUAT AI...</span>
                 <div class="gc-prog">
                     <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
-                    <span id="prog-txt">1/10</span>
+                    <span id="prog-txt">0/0</span>
                 </div>
             </div>
             <div class="timer-row">
                 <div class="timer-track"><div class="timer-bar" id="tbar" style="width:100%"></div></div>
             </div>
             <div class="q-body">
-                <div class="q-num" id="q-num">SOAL 01</div>
-                <div class="q-text" id="q-text">Memuat...</div>
+                <div class="q-num" id="q-num">SOAL --</div>
+                <div class="q-text" id="q-text">Sedang menyiapkan pertanyaan dari AI...</div>
                 <div class="hint-box" id="hint-box"></div>
             </div>
             <div class="opts" id="opts"></div>
@@ -78,13 +77,6 @@
             <div class="actions">
                 <button class="btn btn-hint" onclick="showHint()">💡 Petunjuk</button>
                 <button class="btn btn-next" id="btn-next" onclick="next()" disabled>Lanjut →</button>
-            </div>
-        </div>
-
-        <div class="dev-tab">
-            <div class="dev-content">
-                <span class="dev-tag">Developer</span>
-                <span class="dev-name">Iman Firman</span>
             </div>
         </div>
 
@@ -101,7 +93,6 @@
             <button class="btn-restart" onclick="restart()">▶ Main Lagi</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
