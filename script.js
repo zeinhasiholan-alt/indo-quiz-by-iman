@@ -1,18 +1,16 @@
 // Konfigurasi API xAI
 const XAI_API_KEY = "xai-dij2ynvlPYNSTxI92pHELeboHu4BOMHyinQVuoSQc1vhjNoGiGcFXyO0Ooc5alXm4YC4wdVwo9P4uOrR";
 
-const ALL = [
-    {cat:'umum',q:'Ibu kota negara Indonesia adalah...',opts:['Jakarta','Surabaya','Bandung','Medan'],ans:0,hint:'Kota ini di Pulau Jawa bagian barat laut.'},
-    // ... sisa data asli tetap tersimpan secara internal ...
-];
-
 const L = ['A','B','C','D'];
 let qs = [], idx = 0, score = 0, cor = 0, wrg = 0, answered = false, tmr, tLeft = 20, selCat = 'semua';
 
-// FUNGSI BARU: Mengambil Pertanyaan dari AI
+// Fungsi utama untuk memanggil AI
 async function fetchAIQuestions() {
     const qText = document.getElementById('q-text');
-    qText.textContent = "🤖 AI sedang merancang soal untukmu...";
+    const og = document.getElementById('opts');
+    
+    qText.textContent = "🤖 AI sedang mencari ide pertanyaan baru...";
+    og.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--t3);">Menghubungkan ke otak digital...</div>';
     
     try {
         const response = await fetch('https://api.x.ai/v1/chat/completions', {
@@ -26,27 +24,40 @@ async function fetchAIQuestions() {
                 messages: [
                     {
                         role: "system", 
-                        content: "Berikan 5 soal pilihan ganda bahasa Indonesia dalam format JSON. Kategori: " + selCat + ". Format: array of objects {cat, q, opts[], ans(index), hint}."
+                        content: `Kamu adalah mesin pembuat kuis profesional. 
+                        TUGAS: Berikan 5 soal pilihan ganda yang UNIK, KREATIF, dan BELUM PERNAH diberikan sebelumnya.
+                        TOPIK: ${selCat}.
+                        FORMAT WAJIB: JSON murni (array of objects). 
+                        STRUKTUR: [{"cat": "${selCat}", "q": "pertanyaan", "opts": ["A", "B", "C", "D"], "ans": 0, "hint": "petunjuk singkat"}].
+                        PANTANGAN: Jangan berikan teks pembuka atau penutup. Hanya JSON.`
                     }
                 ],
-                response_format: { type: "json_object" }
+                temperature: 0.9 // Meningkatkan kreativitas agar pertanyaan selalu baru
             })
         });
 
         const data = await response.json();
-        const aiContent = JSON.parse(data.choices[0].message.content);
-        qs = aiContent.questions || aiContent.soal || ALL.slice(0, 5);
+        
+        // Membersihkan data dari karakter aneh (Markdown)
+        let rawContent = data.choices[0].message.content;
+        rawContent = rawContent.replace(/```json|```/g, "").trim();
+        
+        const aiData = JSON.parse(rawContent);
+        
+        // Pastikan kita mendapatkan array soal
+        qs = Array.isArray(aiData) ? aiData : (aiData.questions || aiData.soal);
+        
         idx = 0;
         load();
+        
     } catch (e) {
-        console.error("Gagal memanggil AI:", e);
-        // Jika gagal, gunakan database lokal asli (ALL)
-        qs = shuffle(ALL.filter(q => selCat === 'semua' || q.cat === selCat)).slice(0, 10);
-        idx = 0;
-        load();
+        console.error("AI Error:", e);
+        qText.textContent = "❌ AI sedang sibuk atau API Key bermasalah. Klik 'Main Lagi' untuk mencoba ulang.";
+        og.innerHTML = "";
     }
 }
 
+// Logika Game (Tetap mempertahankan fungsi asli Anda)
 function setCat(c, el) {
     selCat = c;
     document.querySelectorAll('.chip').forEach(b => b.classList.remove('on'));
@@ -54,24 +65,23 @@ function setCat(c, el) {
     restart();
 }
 
-function shuffle(a) { return [...a].sort(() => Math.random() - .5); }
-
 function start() {
     score = 0; cor = 0; wrg = 0; upd();
     document.getElementById('result').classList.remove('show');
     document.getElementById('gcard').classList.remove('gone');
-    fetchAIQuestions(); // Memulai dengan memanggil AI
+    fetchAIQuestions(); 
 }
 
 function load() {
-    if (idx >= qs.length) { showResult(); return; }
+    if (!qs || idx >= qs.length) return;
     answered = false;
     const q = qs[idx];
+    
     document.getElementById('q-num').textContent = `SOAL ${String(idx + 1).padStart(2, '0')}`;
     document.getElementById('q-text').textContent = q.q;
     document.getElementById('hint-box').textContent = '💡 ' + q.hint;
     document.getElementById('hint-box').classList.remove('show');
-    document.getElementById('cat-badge').textContent = q.cat.toUpperCase();
+    document.getElementById('cat-badge').textContent = (q.cat || selCat).toUpperCase();
     document.getElementById('prog-txt').textContent = `${idx + 1}/${qs.length}`;
     document.getElementById('prog').style.width = `${((idx + 1) / qs.length) * 100}%`;
     document.getElementById('btn-next').disabled = true;
@@ -100,7 +110,10 @@ function startTimer() {
 
 function timeUp() {
     answered = true;
-    document.querySelectorAll('.opt').forEach((b, i) => { b.disabled = true; if (i === qs[idx].ans) b.classList.add('correct'); });
+    document.querySelectorAll('.opt').forEach((b, i) => { 
+        b.disabled = true; 
+        if (i === qs[idx].ans) b.classList.add('correct'); 
+    });
     setFb(false, '⏰ Waktu habis!');
     wrg++; upd(); document.getElementById('btn-next').disabled = false;
 }
@@ -116,16 +129,27 @@ function pick(i) {
         score += Math.max(10, tLeft * 5); cor++;
         setFb(true, `✅ Benar!`);
     } else {
-        btns[i].classList.add('wrong'); btns[q.ans].classList.add('correct'); wrg++;
+        btns[i].classList.add('wrong'); 
+        btns[q.ans].classList.add('correct'); 
+        wrg++;
         setFb(false, `❌ Salah!`);
     }
     upd(); document.getElementById('btn-next').disabled = false;
 }
 
-function setFb(ok, msg) { const fb = document.getElementById('fb'); fb.className = 'fb ' + (ok ? 'ok' : 'bad'); document.getElementById('fb-txt').textContent = msg; }
+function setFb(ok, msg) { 
+    const fb = document.getElementById('fb'); 
+    fb.className = 'fb ' + (ok ? 'ok' : 'bad'); 
+    document.getElementById('fb-txt').textContent = msg; 
+}
+
 function showHint() { document.getElementById('hint-box').classList.toggle('show'); }
-function next() { idx++; load(); }
-function upd() { document.getElementById('sv-score').textContent = score; document.getElementById('sv-cor').textContent = cor; document.getElementById('sv-wrg').textContent = wrg; }
+function next() { idx++; if(idx < qs.length) { load(); } else { showResult(); } }
+function upd() { 
+    document.getElementById('sv-score').textContent = score; 
+    document.getElementById('sv-cor').textContent = cor; 
+    document.getElementById('sv-wrg').textContent = wrg; 
+}
 
 function showResult() {
     clearInterval(tmr);
@@ -145,5 +169,5 @@ function toggleTheme() {
     document.getElementById('tlabel').textContent = dark ? '🌙 Gelap' : '☀️ Terang';
 }
 
-// Menjalankan game
+// Inisialisasi awal
 start();
