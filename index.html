@@ -1,102 +1,122 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indo Quiz | teka-teki acak</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Indo Quiz | Premium Edition</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="premium-bg">
-        <div class="glow-orb orb-1"></div>
-        <div class="glow-orb orb-2"></div>
+    <div class="bg-container">
+        <div class="orb orb-purple"></div>
+        <div class="orb orb-blue"></div>
+        <div class="grid-overlay"></div>
     </div>
 
-    <div class="container">
-        <nav class="glass-nav">
-            <div class="brand">
-                <div class="brand-logo">IQ</div>
-                <div class="brand-text">
-                    <h1>Indo Quiz AI</h1>
-                    <p>Experience by Iman Firman</p>
+    <div class="app-wrapper">
+        <nav class="side-nav">
+            <div class="logo-container">
+                <div class="logo-hex">IF</div>
+                <div class="logo-text">
+                    <h2>INDO QUIZ</h2>
+                    <p>PRO EDITION</p>
                 </div>
             </div>
-            <div class="nav-actions">
-                <button class="dev-btn" onclick="openDevModal()">👤 Dev</button>
-                <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+            <div class="menu-items">
+                <div class="menu-link active" onclick="home()">🏠 Beranda</div>
+                <div class="menu-link" onclick="openDev()">👤 Developer</div>
             </div>
         </nav>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-label">TOTAL SKOR</span>
-                <span class="stat-value" id="sv-score">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">AKURASI</span>
-                <span class="stat-value" id="sv-acc">0%</span>
-            </div>
-        </div>
-
-        <main class="quiz-box glass-card" id="quiz-box">
-            <div class="quiz-header">
-                <div class="category-tag" id="cat-badge">GENERATING AI...</div>
-                <div class="progress-info">
-                    <span id="prog-text">0/10</span>
+        <main class="main-content">
+            <header class="top-stats">
+                <div class="stat-glass">
+                    <span class="label">SKOR TERBAIK</span>
+                    <span class="value" id="top-score">0</span>
                 </div>
-            </div>
-            
-            <div class="progress-bar-container">
-                <div class="progress-fill" id="prog-fill"></div>
-            </div>
+                <div class="stat-glass">
+                    <span class="label">AKURASI</span>
+                    <span class="value" id="accuracy">0%</span>
+                </div>
+                <div class="stat-glass">
+                    <span class="label">LEVEL</span>
+                    <span class="value">GOLD</span>
+                </div>
+            </header>
 
-            <div class="timer-container">
-                <div class="timer-line" id="t-line"></div>
-            </div>
+            <section class="game-container" id="game-ui">
+                <div class="quiz-header">
+                    <div class="q-badge" id="category">UMUM & TEKNOLOGI</div>
+                    <div class="q-timer">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" id="timer-stroke" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <span id="seconds">20</span>
+                    </div>
+                </div>
 
-            <div class="question-area">
-                <h2 id="q-text">Menghubungkan ke otak AI Groq...</h2>
-                <div class="hint-msg" id="hint-msg"></div>
-            </div>
+                <div class="progress-section">
+                    <div class="progress-labels">
+                        <span>SOAL KE <span id="current-q">1</span></span>
+                        <span>DARI <span id="total-q">10</span></span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="fill"></div>
+                    </div>
+                </div>
 
-            <div class="options-grid" id="opts-grid"></div>
+                <div class="question-box">
+                    <h1 id="q-text">Mempersiapkan tantangan...</h1>
+                </div>
 
-            <div class="feedback-area" id="fb-toast"></div>
+                <div class="options-layout" id="options">
+                    </div>
 
-            <div class="footer-actions">
-                <button class="btn-hint" onclick="toggleHint()">💡 Hint</button>
-                <button class="btn-next" id="btn-next" onclick="nextQuestion()" disabled>Lanjut →</button>
-            </div>
+                <div class="action-footer">
+                    <button class="btn-secondary" id="hint-btn" onclick="showHint()">💡 PETUNJUK</button>
+                    <button class="btn-primary" id="next-btn" onclick="nextQuestion()" disabled>LANJUT →</button>
+                </div>
+            </section>
+
+            <section class="result-screen" id="result-ui" style="display: none;">
+                <div class="victory-card">
+                    <div class="medal-icon">🏆</div>
+                    <h2>KUIS SELESAI</h2>
+                    <p>Hebat! Kamu telah menyelesaikan semua tantangan.</p>
+                    <div class="result-grid">
+                        <div class="res-card">
+                            <span class="res-label">BENAR</span>
+                            <span class="res-val" id="res-correct">0</span>
+                        </div>
+                        <div class="res-card">
+                            <span class="res-label">TOTAL SKOR</span>
+                            <span class="res-val" id="res-score">0</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="location.reload()">COBA LAGI</button>
+                </div>
+            </section>
         </main>
-
-        <div class="result-screen glass-card" id="result-screen" style="display: none;">
-            <div class="result-header">
-                <span class="result-emoji" id="r-emoji">🏁</span>
-                <h2 id="r-title">FINISH!</h2>
-            </div>
-            <div class="result-stats">
-                <div class="res-item"><span>Benar</span><b id="rv-cor">0</b></div>
-                <div class="res-item"><span>Salah</span><b id="rv-wrg">0</b></div>
-                <div class="res-item"><span>Skor Akhir</span><b id="rv-score">0</b></div>
-            </div>
-            <button class="btn-restart" onclick="restartGame()">🔄 Main Lagi</button>
-        </div>
     </div>
 
-    <div class="modal-overlay" id="dev-modal">
-        <div class="modal-card glass-card">
-            <button class="close-modal" onclick="closeDevModal()">&times;</button>
-            <div class="dev-profile">
-                <div class="dev-avatar">IF</div>
+    <div class="modal" id="dev-modal">
+        <div class="modal-card">
+            <button class="close-btn" onclick="closeDev()">&times;</button>
+            <div class="dev-banner"></div>
+            <div class="dev-info">
+                <div class="dev-pfp">IF</div>
                 <h2>Iman Firman</h2>
-                <p>Lead AI Developer</p>
-                <div class="dev-tags">
-                    <span>Vercel Expert</span>
-                    <span>AI Specialist</span>
-                    <span>UI/UX Designer</span>
+                <p class="tagline">Lead Software Architect & AI Specialist</p>
+                <div class="skills">
+                    <span>WEB DEV</span>
+                    <span>CYBER SECURITY</span>
+                    <span>AI DESIGN</span>
                 </div>
-                <div class="dev-bio">"Building the future with Groq AI & Premium Design."</div>
+                <div class="bio">
+                    "Membangun pengalaman digital masa depan dengan detail luar biasa."
+                </div>
             </div>
         </div>
     </div>
