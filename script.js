@@ -1,64 +1,57 @@
 /**
  * Proyek: Indo Quiz AI
  * Developer: Iman Firman
- * Fitur: Auto-Update Questions via OpenTDB API (Gratis & Tanpa API Key)
+ * Fitur: 10 Soal, Database Lokal (Indonesia), No API Key Needed
  */
+
+// Database Soal Internal (Bisa kamu tambahkan terus ke bawah)
+const DB_SOAL = [
+    {cat:'umum', q:'Apa ibu kota Indonesia sebelum pindah ke IKN?', opts:['Bandung','Jakarta','Surabaya','Medan'], ans:1, hint:'Kota ini terletak di pulau Jawa.'},
+    {cat:'sains', q:'Planet manakah yang dijuluki sebagai Planet Merah?', opts:['Venus','Mars','Jupiter','Saturnus'], ans:1, hint:'Planet ini memiliki banyak oksida besi.'},
+    {cat:'sejarah', q:'Siapakah proklamator kemerdekaan Indonesia?', opts:['Soeharto','Hatta & Soekarno','Ki Hajar Dewantara','Gajah Mada'], ans:1, hint:'Dua tokoh ini ada di uang pecahan 100rb.'},
+    {cat:'geografi', q:'Gunung tertinggi di dunia adalah...', opts:['Semeru','Fuji','Everest','Kilimanjaro'], ans:2, hint:'Terletak di pegunungan Himalaya.'},
+    {cat:'teknologi', q:'Siapa penemu sistem operasi Windows?', opts:['Steve Jobs','Mark Zuckerberg','Bill Gates','Elon Musk'], ans:2, hint:'Perusahaannya bernama Microsoft.'},
+    {cat:'budaya', q:'Alat musik angklung berasal dari daerah...', opts:['Jawa Tengah','Jawa Barat','Sumatera','Bali'], ans:1, hint:'Terbuat dari bambu.'},
+    {cat:'sains', q:'Zat hijau daun pada tumbuhan disebut...', opts:['Oksigen','Klorofil','Stomata','Karbon'], ans:1, hint:'Berfungsi untuk fotosintesis.'},
+    {cat:'umum', q:'Mata uang negara Jepang adalah...', opts:['Won','Dollar','Yen','Baht'], ans:2, hint:'Huruf depannya Y.'},
+    {cat:'sejarah', q:'Tahun berapakah Indonesia merdeka?', opts:['1942','1945','1950','1998'], ans:1, hint:'Dua angka terakhirnya adalah 45.'},
+    {cat:'teknologi', q:'Apa kepanjangan dari WWW?', opts:['World Wide Web','Web Web Web','Word Wide Web','World Web Wide'], ans:0, hint:'Digunakan di awal alamat website.'},
+    {cat:'umum', q:'Siapa pencipta lagu Indonesia Raya?', opts:['Ismail Marzuki','WR Supratman','Ibu Sud','Kusbini'], ans:1, hint:'Namanya sering disingkat WR.'},
+    {cat:'geografi', q:'Danau terbesar di Indonesia adalah...', opts:['Danau Toba','Danau Singkarak','Danau Poso','Danau Sentani'], ans:0, hint:'Terletak di Sumatera Utara.'},
+    {cat:'sains', q:'Mamalia air yang dikenal sangat cerdas adalah...', opts:['Hiu','Paus','Lumba-lumba','Anjing Laut'], ans:2, hint:'Sering menolong manusia.'},
+    {cat:'olahraga', q:'Berapa jumlah pemain dalam satu tim sepak bola?', opts:['5','12','11','10'], ans:2, hint:'Kesebelasan.'},
+    {cat:'bahasa', q:'Lawan kata (antonim) dari "Rajin" adalah...', opts:['Pintar','Malas','Cerdas','Giat'], ans:1, hint:'Orang yang tidak mau bekerja.'}
+];
 
 const L = ['A', 'B', 'C', 'D'];
 let qs = [], idx = 0, score = 0, cor = 0, wrg = 0, answered = false, tmr, tLeft = 20, selCat = 'semua';
 
-// 1. Fungsi Mengambil Soal dari Database Global (OpenTDB)
-async function fetchAIQuestions() {
+// Fungsi Memilih & Mengacak Soal
+function fetchAIQuestions() {
     const qText = document.getElementById('q-text');
-    const og = document.getElementById('opts');
+    qText.textContent = "🔍 Menyiapkan 10 soal untukmu...";
     
-    qText.textContent = "🌐 Mengambil soal terbaru untukmu...";
-    og.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--t3); padding: 20px;">Menghubungkan ke pusat data...</div>';
-    
-    // Pemetaan kategori ke ID OpenTDB
-    const catMap = {
-        'umum': 9,      // General Knowledge
-        'sains': 17,    // Science & Nature
-        'sejarah': 23,  // History
-        'geografi': 22, // Geography
-        'budaya': 24,   // Politics/Art
-        'bahasa': 10    // Entertainment: Books/Language
-    };
-    
-    const catId = catMap[selCat] || 9;
-
-    try {
-        // Mengambil 5 soal acak
-        const response = await fetch(`https://opentdb.com/api.php?amount=5&category=${catId}&type=multiple`);
-        const data = await response.json();
-
-        if (data.response_code !== 0) throw new Error("Server sibuk");
-
-        // Format data agar sesuai dengan struktur game kamu
-        qs = data.results.map(item => {
-            const allOpts = [...item.incorrect_answers, item.correct_answer].sort(() => Math.random() - 0.5);
-            const correctIdx = allOpts.indexOf(item.correct_answer);
-
-            return {
-                cat: selCat,
-                q: decodeHTML(item.question), 
-                opts: allOpts.map(o => decodeHTML(o)),
-                ans: correctIdx,
-                hint: "Ini adalah soal pengetahuan umum tingkat global."
-            };
-        });
-
-        idx = 0;
-        load();
-        
-    } catch (e) {
-        console.error("Fetch Error:", e);
-        qText.textContent = "❌ Gagal memuat soal. Pastikan internet aktif dan coba lagi.";
-        og.innerHTML = '<button class="btn-restart" onclick="restart()">Coba Lagi</button>';
+    // Memfilter soal berdasarkan kategori (jika bukan 'semua')
+    let filtered = DB_SOAL;
+    if(selCat !== 'semua') {
+        filtered = DB_SOAL.filter(s => s.cat === selCat);
     }
+
+    // Mengacak soal (Shuffle)
+    const shuffled = filtered.sort(() => Math.random() - 0.5);
+    
+    // Mengambil maksimal 10 soal
+    qs = shuffled.slice(0, 10);
+    
+    // Jika soal kurang dari 10 (karena kategori sepi), ambil dari kategori lain
+    if(qs.length < 10) {
+        qs = shuffled.slice(0, 10); 
+    }
+
+    idx = 0;
+    setTimeout(load, 800); // Memberi efek loading singkat
 }
 
-// 2. Fungsi Menjalankan Game
 function start() {
     score = 0; cor = 0; wrg = 0; upd();
     document.getElementById('result').classList.remove('show');
@@ -67,11 +60,10 @@ function start() {
 }
 
 function load() {
-    if (!qs || idx >= qs.length) { showResult(); return; }
+    if (!qs || qs.length === 0 || idx >= qs.length) { showResult(); return; }
     answered = false;
     const q = qs[idx];
     
-    // Update UI
     document.getElementById('q-num').textContent = `SOAL ${String(idx + 1).padStart(2, '0')}`;
     document.getElementById('q-text').textContent = q.q;
     document.getElementById('hint-box').textContent = '💡 ' + q.hint;
@@ -84,7 +76,6 @@ function load() {
 
     const og = document.getElementById('opts');
     og.innerHTML = '';
-    
     q.opts.forEach((o, i) => {
         const b = document.createElement('button');
         b.className = 'opt';
@@ -92,11 +83,9 @@ function load() {
         b.onclick = () => pick(i);
         og.appendChild(b);
     });
-    
     startTimer();
 }
 
-// 3. Sistem Timer
 function startTimer() {
     clearInterval(tmr); tLeft = 20;
     const bar = document.getElementById('tbar'); bar.style.width = '100%';
@@ -113,38 +102,24 @@ function timeUp() {
         if (i === qs[idx].ans) b.classList.add('correct'); 
     });
     setFb(false, '⏰ Waktu habis!');
-    wrg++; upd(); 
-    document.getElementById('btn-next').disabled = false;
+    wrg++; upd(); document.getElementById('btn-next').disabled = false;
 }
 
-// 4. Logika Jawaban
 function pick(i) {
     if (answered) return;
     answered = true; clearInterval(tmr);
     const q = qs[idx];
     const btns = document.querySelectorAll('.opt');
     btns.forEach(b => b.disabled = true);
-
     if (i === q.ans) {
         btns[i].classList.add('correct');
-        const bonus = Math.max(10, tLeft * 5); 
-        score += bonus; cor++;
+        const bonus = Math.max(10, tLeft * 5); score += bonus; cor++;
         setFb(true, `✅ Benar! +${bonus} Poin`);
     } else {
-        btns[i].classList.add('wrong'); 
-        btns[q.ans].classList.add('correct'); 
-        wrg++;
+        btns[i].classList.add('wrong'); btns[q.ans].classList.add('correct'); wrg++;
         setFb(false, `❌ Salah!`);
     }
-    upd(); 
-    document.getElementById('btn-next').disabled = false;
-}
-
-// 5. Utility & UI Helper
-function decodeHTML(html) {
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html;
-    return txt.value;
+    upd(); document.getElementById('btn-next').disabled = false;
 }
 
 function setCat(c, el) {
@@ -173,6 +148,14 @@ function showResult() {
     document.getElementById('gcard').classList.add('gone');
     document.getElementById('result').classList.add('show');
     const acc = qs.length ? Math.round((cor / qs.length) * 100) : 0;
+    
+    // Penilaian berdasarkan akurasi
+    let rTitle = "BOLEH JUGA!";
+    if(acc >= 90) rTitle = "LUAR BIASA! 👑";
+    else if(acc >= 70) rTitle = "HEBAT! 🔥";
+    else if(acc < 50) rTitle = "COBA LAGI, MAN! 📚";
+
+    document.getElementById('r-title').textContent = rTitle;
     document.getElementById('r-score').textContent = score;
     document.getElementById('rv-c').textContent = cor;
     document.getElementById('rv-w').textContent = wrg;
@@ -180,13 +163,11 @@ function showResult() {
 }
 
 function restart() { start(); }
-
 function toggleTheme() {
-    const h = document.documentElement;
-    const isDark = h.getAttribute('data-theme') === 'dark';
-    h.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('tlabel').textContent = isDark ? '🌙 Gelap' : '☀️ Terang';
+    const h = document.documentElement, dark = h.getAttribute('data-theme') === 'dark';
+    h.setAttribute('data-theme', dark ? 'light' : 'dark');
+    document.getElementById('tlabel').textContent = dark ? '🌙 Gelap' : '☀️ Terang';
 }
 
-// Jalankan aplikasi saat halaman dimuat
+// Inisialisasi
 document.addEventListener('DOMContentLoaded', start);
